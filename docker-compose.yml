@@ -1,0 +1,56 @@
+name: rag3
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rag3-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # NVIDIA GPU (optional): uncomment
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # One-shot job: pulls the models, then exits
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["/bin/sh", "-c", "ollama pull bge-m3 && ollama pull qwen2.5:7b"]
+    restart: "no"
+
+  rag-app:
+    build: .
+    container_name: rag3-app
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      # Logfire: don't try to send data unless you set a token
+      - LOGFIRE_SEND_TO_LOGFIRE=false
+      # - LOGFIRE_TOKEN=your_token_here
+    volumes:
+      - ./docs:/app/docs
+      - qdrant_data:/app/qdrant_db
+    depends_on:
+      ollama:
+        condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  qdrant_data:

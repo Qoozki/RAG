@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - RealSoft RAG</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: #1e1e1e; padding: 30px; border-radius: 8px; border: 1px solid #333; width: 320px; }
+        h2 { margin-top: 0; color: #007acc; }
+        label { font-size: 0.85rem; color: #aaa; text-transform: uppercase; }
+        input { width: 100%; padding: 10px; margin: 8px 0 16px 0; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #007acc; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #005999; }
+        .error { color: #ff4d4d; font-size: 0.85rem; margin-top: 10px; display: none; }
+        .credentials-info { margin-top: 20px; padding-top: 15px; border-top: 1px solid #333; font-size: 0.8rem; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>RealSoft RAG Login</h2>
+        <form id="loginForm">
+            <label>Username</label>
+            <input type="text" id="username" required autofocus />
+            <label>Password</label>
+            <input type="password" id="password" required />
+            <button type="submit">Log In</button>
+        </form>
+        <div id="errorMsg" class="error">Invalid username or password.</div>
+        
+        <div class="credentials-info">
+            <strong>Default Demo Users:</strong><br/>
+            Viewer: <code>viewer</code> / <code>viewer123</code><br/>
+            Admin: <code>admin</code> / <code>admin123</code>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const errorMsg = document.getElementById("errorMsg");
+
+            const response = await fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({ username, password })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem("token", data.access_token);
+                localStorage.setItem("username", data.username);
+                localStorage.setItem("role", data.role);
+                window.location.href = "/";
+            } else {
+                errorMsg.style.display = "block";
+            }
+        });
+    </script>
+</body>
+</html>
